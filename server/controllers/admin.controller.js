@@ -3,6 +3,7 @@ const validator = require("validator")
 const Subject = require("../models/Subject")
 const Student = require("../models/Student")
 const { checkEmpty } = require("../utils/checkEmpty")
+const Mark = require("../models/Mark")
 
 // Subject CRUD
 
@@ -105,13 +106,48 @@ exports.addMark = asynHandler(async (req, res) => {
     if (!validator.isMongoId(subject)) {
         return res.status(400).json({ error: "invalid student id" })
     }
+    await Mark.create({ student, subject, score })
+    res.json({ message: "student mark add success" })
 })
+
 exports.updateMark = asynHandler(async (req, res) => {
-
+    const { mid } = req.params
+    if (!validator.isMongoId(mid)) {
+        return res.status(400).json({ error: "invalid mark id" })
+    }
+    const data = {}
+    const { subject, score } = req.body
+    if (subject) {
+        if (!validator.isMongoId(subject)) {
+            return res.status(400).json({ error: "invalid subject id" })
+        } else {
+            data.subject = subject
+        }
+    }
+    if (score) {
+        data.score = score
+    }
+    await Mark.findByIdAndUpdate(mid, data)
+    res.json({ message: "student mark update success" })
 })
+
 exports.deleteMark = asynHandler(async (req, res) => {
-
+    const { mid } = req.params
+    if (!validator.isMongoId(mid)) {
+        return res.status(400).json({ error: "invalid mark id" })
+    }
+    await Mark.findByIdAndDelete(mid)
+    res.json({ message: "student mark delete success" })
 })
-exports.getAllMarks = asynHandler(async (req, res) => {
 
+exports.getAllMarks = asynHandler(async (req, res) => {
+    const { studentId } = req.params
+    if (!validator.isMongoId(studentId)) {
+        return res.status(400).json({ error: "invalid student id" })
+    }
+    const result = await Mark
+        .find({ student: studentId })
+        .populate("student")
+        .populate("subject")
+    res.json({ message: "student mark  fetch success", result })
 })
